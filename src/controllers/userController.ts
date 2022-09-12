@@ -1,11 +1,13 @@
+import { User, Profile } from "@prisma/client";
 import { Request, Response } from "express";
 import prisma from "../../prismaClient";
+import { sendMail } from "../Tools/nodemailer";
 import { authDetails, CurrentUser } from "./authController";
+const randomString = require("randomstring");
 const bcr = require("bcrypt");
 
 interface updatePasswordRequestBody {
   password: string;
-  confirmPassword: string;
 }
 const updatePassword = (req: Request, res: Response) => {
   const body: updatePasswordRequestBody = req.body;
@@ -33,8 +35,10 @@ const updatePassword = (req: Request, res: Response) => {
 };
 
 interface updateProfileRequestBody {
-  bio: string;
+  userName?: string;
+  bio?: string;
 }
+
 const updateProfile = (req: Request, res: Response) => {
   const User: CurrentUser = authDetails(req);
   const body: updateProfileRequestBody = req.body;
@@ -45,11 +49,13 @@ const updateProfile = (req: Request, res: Response) => {
       },
       data: body,
     })
-    .then((doc) => {
+    .then((doc: Profile) => {
       return res.status(200).json(doc);
     })
     .catch((err: Error) => {
       return res.status(500).json({ message: err.message });
     });
 };
-export { updatePassword , updateProfile};
+
+const forgotPassword = (req : Request, res : Response)=>{}
+export { updatePassword, updateProfile };

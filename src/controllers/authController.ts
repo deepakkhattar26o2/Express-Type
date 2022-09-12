@@ -1,8 +1,29 @@
 import prisma from "../../prismaClient";
 import { NextFunction, Request, Response } from "express";
+import { sendMail } from "../Tools/nodemailer";
 import { User } from "@prisma/client";
 const bcr = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const randomString = require('randomstring')
+
+const confirmEmail = (req: Request, res: Response) => {
+  if (!req.body.email) {
+    return res.status(403).json({ message: "No Email Found!" });
+  }
+  const email = req.body.email;
+
+  const otp: string = randomString.generate(6);
+
+  sendMail(
+    email,
+    "testing smtp",
+    `Your one time password for the app is ${otp}`
+  ).then((doc: any) => {
+      res.status(200).json({ otp: otp, email: email, message: doc.info });
+  }).catch((err: Error) => {
+      res.status(500).json({ message: err.message });
+  });
+};
 
 interface signupRequest {
   email     : string;
@@ -45,9 +66,9 @@ const signupRequestHandler = async (req: Request, res: Response) => {
         data: {
           email: email,
           password: hash,
-          name: name,
           profile: {
             create: {
+              userName : name,
               bio: "Hello there!",
             },
           },
@@ -131,9 +152,8 @@ const verifyAuth = (req: Request, res: Response, next: NextFunction) => {
 interface CurrentUser{
   "id"          : number,
   "email"       : string,
-  "name"        : string,
   "role"        : string,
   "createdAt"   : string,
   "iat"         : number
 }
-export { signupRequestHandler, loginRequestHandler, authDetails, verifyAuth , CurrentUser};
+export { signupRequestHandler, loginRequestHandler, authDetails, verifyAuth ,confirmEmail, CurrentUser};
