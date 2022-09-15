@@ -1,7 +1,7 @@
 import prisma from "../../prismaClient";
 import { NextFunction, Request, Response } from "express";
 import { sendMail } from "../Tools/nodemailer";
-import { User } from "@prisma/client";
+import { Profile, User } from "@prisma/client";
 const bcr = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const randomString = require('randomstring')
@@ -73,6 +73,7 @@ const signupRequestHandler = async (req: Request, res: Response) => {
             },
           },
         },
+        include:{profile : true}
       })
       .then((doc) => {
         const mdoc: any = Object.assign({}, doc);
@@ -111,6 +112,7 @@ const loginRequestHandler = async (req: Request, res: Response) => {
   
   let alreadyExists: User | null = await prisma.user.findFirst({
     where: { email: email },
+    include:{profile : true}
   });
 
   if (!alreadyExists) {
@@ -133,6 +135,16 @@ const loginRequestHandler = async (req: Request, res: Response) => {
   });
 };
 
+
+interface CurrentUser{
+  "id"          : number,
+  "email"       : string,
+  "role"        : string,
+  "createdAt"   : string,
+  "iat"         : number,
+  "profile"     : Profile
+}
+
 const authDetails = (req: Request): CurrentUser => {
   const token = req.headers.authorization;
   const decoded: CurrentUser = jwt.verify(token, process.env.SECRET_KEY);
@@ -149,11 +161,4 @@ const verifyAuth = (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-interface CurrentUser{
-  "id"          : number,
-  "email"       : string,
-  "role"        : string,
-  "createdAt"   : string,
-  "iat"         : number
-}
 export { signupRequestHandler, loginRequestHandler, authDetails, verifyAuth ,confirmEmail, CurrentUser};
