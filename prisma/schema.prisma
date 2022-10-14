@@ -8,24 +8,77 @@ datasource db {
 }
 
 model User {
-  id          Int      @id @default(autoincrement())
-  email       String   @unique
-  password    String
-  role        Role     @default(USER)
-  profile     Profile?
-  createdAt  DateTime @default(now())
+  id                    Int       @id @default(autoincrement())
+  email                 String    @unique
+  password              String
+  role                  Role      @default(USER)
+  userName              String    @unique
+  bio                   String
+  createdAt             DateTime  @default(now())
+  rooms                 Room[]      @relation(name: "hosting")
+  memberships           Room[]      @relation(name: "member")
+  messagesSent          Message[]   @relation(name: "sender")
+  messagesReceived      Message[]   @relation(name: "receiver")
+  posts                 Post[]     @relation(name: "post")
+  comments              Comment[]   @relation(name : "comment")
+} 
+
+model Room{
+  id          Int         @id   @default(autoincrement())
+  topics      String[]
+  roomName    String      @unique
+  description String      @default("No Description Available!")
+  hostId      Int   
+  host        User        @relation(fields: [hostId], references: [id], name: "hosting")
+  members     User[]      @relation(name: "member")
+  messages    Message[]
+  createdAt   DateTime    @default(now())
 }
 
-model Profile {
-  id          Int     @id @default(autoincrement())
-  bio         String
-  userName    String  @unique
-  user        User    @relation(fields: [userId], references: [id])
-  userId      Int     @unique
-  createdAt  DateTime @default(now())
+model Message{
+  id            Int         @id @default(autoincrement())
+  userId        Int
+  user          User        @relation(fields: [userId], references: [id], name: "sender")
+  receiverId    Int?
+  receiver      User?       @relation(fields: [receiverId], references: [id], name: "receiver")
+  body          String
+  roomId        Int?
+  room          Room?       @relation(fields: [roomId], references: [id])
+  responses     Message[]   @relation(name: "thread")
+  threadId      Int?       
+  attachment    Boolean?
+  responseTo    Message?    @relation(fields: [threadId], references: [id],name: "thread")
+  createdAt     DateTime    @default(now())
 }
 
+model Post{
+  id            Int     @id @default(autoincrement())
+  title         String?
+  userId        Int
+  user          User  @relation(references: [id], fields: [userId], name: "post")
+  attachment    Boolean?
+  body          String
+  comments      Comment[]
+  createdAt     DateTime    @default(now())
+}
+
+model Comment{
+  id            Int @id @default(autoincrement())
+  userId        Int
+  postId        Int
+  post          Post   @relation(references : [id], fields : [postId])
+  user          User  @relation(references: [id], fields: [userId], name: "comment")
+  body          String
+  threadId      Int?
+  responses     Comment[] @relation(name: "commentThread")
+  responseTo    Comment?  @relation(fields: [threadId], references: [id], name: "commentThread")
+}
 enum Role {
   USER
   ADMIN
 }
+
+// generator erd {
+//   provider = "prisma-erd-generator"
+//   theme = "forest"
+// }

@@ -1,13 +1,14 @@
 import prisma from "../../prismaClient";
 import { NextFunction, Request, Response } from "express";
 import { sendMail } from "../Tools/nodemailer";
-import { Profile, User } from "@prisma/client";
+import { User } from "@prisma/client";
 const bcr = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const randomString = require('randomstring')
 
 const confirmEmail = (req: Request, res: Response) => {
   if (!req.body.email) {
+      
     return res.status(403).json({ message: "No Email Found!" });
   }
   const email = req.body.email;
@@ -17,7 +18,7 @@ const confirmEmail = (req: Request, res: Response) => {
   sendMail(
     email,
     "testing smtp",
-    `Your one time password for the app is ${otp}`
+    `Your one time password is ${otp}`
   ).then((doc: any) => {
       res.status(200).json({ otp: otp, email: email, message: doc.info });
   }).catch((err: Error) => {
@@ -28,7 +29,7 @@ const confirmEmail = (req: Request, res: Response) => {
 interface signupRequest {
   email     : string;
   password  : string;
-  name      : string;
+  userName  : string;
 }
 
 const signupRequestValidator = (body: signupRequest): [boolean, string] => {
@@ -38,7 +39,7 @@ const signupRequestValidator = (body: signupRequest): [boolean, string] => {
   if (!body.password || body.password.length < 6) {
     return [false, "password"];
   }
-  if (!body.name || body.name.length < 3) {
+  if (!body.userName || body.userName.length < 3) {
     return [false, "name"];
   }
   return [true, "success"];
@@ -50,7 +51,7 @@ const signupRequestHandler = async (req: Request, res: Response) => {
   if (!validator[0]) {
     return res.status(409).json({ message: `Invalid ${validator[1]}` });
   }
-  const { email, password, name } = body;
+  const { email, password, userName } = body;
   let alreadyExists: User | null = await prisma.user.findFirst({
     where: { email: email },
   });
@@ -60,20 +61,23 @@ const signupRequestHandler = async (req: Request, res: Response) => {
       .status(409)
       .json({ message: "An account already exists with this email" });
   }
+  alreadyExists = await prisma.user.findFirst({
+    where: { userName: userName },
+  });
+  if (alreadyExists) {
+    return res
+      .status(409)
+      .json({ message: "An account already exists with this username" });
+  }
   bcr.hash(password, 10, (err: Error, hash: string) => {
     prisma.user
       .create({
         data: {
           email: email,
           password: hash,
-          profile: {
-            create: {
-              userName : name,
-              bio: "Hello there!",
-            },
-          },
+          userName: userName,
+          bio : "Hello There!",
         },
-        include:{profile : true}
       })
       .then((doc) => {
         const mdoc: any = Object.assign({}, doc);
@@ -88,13 +92,14 @@ const signupRequestHandler = async (req: Request, res: Response) => {
 };
 
 interface loginRequest {
-  email     : string;
-  password  : string;
+  email       : string;
+  password    : string;
+  userName    : string;
 }
 
 const loginRequestValidator = (body: loginRequest): [boolean, string] => {
-  if (!body.email || !body.email.endsWith("@gmail.com")) {
-    return [false, "email"];
+  if (!body.email && !body.userName) {
+    return [false, "ID"];
   }
   if (!body.password || body.password.length < 6) {
     return [false, "password"];
@@ -108,15 +113,13 @@ const loginRequestHandler = async (req: Request, res: Response) => {
   if (!validator[0]) {
     return res.status(409).json({ message: `Invalid ${validator[1]}` });
   }
-  const { email, password } = body;
-  
-  let alreadyExists: User | null = await prisma.user.findFirst({
-    where: { email: email },
-    include:{profile : true}
-  });
+  const { email, password, userName } = body;
+  var alreadyExists : User | null= await prisma.user.findFirst({
+      where: { OR : [{userName: userName}, { email: email } ] },
+    });
 
-  if (!alreadyExists) {
-    return res.status(409).json({ message: "Account doesn't exist!" });
+  if(!alreadyExists){
+    return res.status(409).json({message : "Invalid Credentials!"})
   }
 
   bcr.compare(password, alreadyExists.password, (err: Error, same: boolean) => {
@@ -138,11 +141,12 @@ const loginRequestHandler = async (req: Request, res: Response) => {
 
 interface CurrentUser{
   "id"          : number,
+  "userName"    : string,
+  "bio"         : string,
   "email"       : string,
   "role"        : string,
   "createdAt"   : string,
   "iat"         : number,
-  "profile"     : Profile
 }
 
 const authDetails = (req: Request): CurrentUser => {
@@ -161,4 +165,9 @@ const verifyAuth = (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-export { signupRequestHandler, loginRequestHandler, authDetails, verifyAuth ,confirmEmail, CurrentUser};
+
+const authTest = (req : Request, res : Response)=>{
+  const currUser : CurrentUser = authDetails(req);
+  return res.status(200).json(currUser)
+}
+export { signupRequestHandler, loginRequestHandler, authDetails, verifyAuth ,confirmEmail, CurrentUser, authTest};

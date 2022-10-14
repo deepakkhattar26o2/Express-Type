@@ -1,4 +1,5 @@
 const multer = require("multer");
+const multerInst = multer();
 import path from 'path'
 import { NextFunction, Request, Response } from "express";
 import fs from 'fs'
@@ -20,7 +21,7 @@ const storage = multer.diskStorage({
   filename: function (req: any, file: any, cb: any) {
     cb(
       null,
-      req.params.name + ".jpg"
+      req.query.attachment + ".jpg"
       // file.originalname.slice(file.originalname.lastIndexOf("."))
     );
   },
@@ -48,4 +49,4 @@ const imagePath = (name : string) : string =>{
   return default_img_path;
 }
 
-export  {upload, imagePath};
+export  {upload, imagePath, multerInst};
