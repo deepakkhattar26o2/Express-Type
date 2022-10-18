@@ -3,9 +3,7 @@ import e, { NextFunction, Request, Response } from "express";
 import prisma from "../../prismaClient";
 import { Post, Comment } from "@prisma/client";
 import requestValidator from "../Tools/validator";
-/*
- * TO DO :  refactor create/update posts and try to reduce error cases!
- */
+
 const createPost = (req: Request, res: Response, next: NextFunction) => {
   const body: any = req.query;
   const currUser: CurrentUser = authDetails(req);

@@ -8,19 +8,22 @@ datasource db {
 }
 
 model User {
-  id                    Int       @id @default(autoincrement())
-  email                 String    @unique
+  id                    Int         @id @default(autoincrement())
+  email                 String      @unique
+  fullName              String?    
   password              String
-  role                  Role      @default(USER)
-  userName              String    @unique
+  role                  Role        @default(USER)
+  userName              String      @unique
   bio                   String
-  createdAt             DateTime  @default(now())
+  createdAt             DateTime    @default(now())
   rooms                 Room[]      @relation(name: "hosting")
   memberships           Room[]      @relation(name: "member")
   messagesSent          Message[]   @relation(name: "sender")
   messagesReceived      Message[]   @relation(name: "receiver")
-  posts                 Post[]     @relation(name: "post")
+  posts                 Post[]      @relation(name: "post")
   comments              Comment[]   @relation(name : "comment")
+  followers             User[]      @relation(name: "peers")
+  following             User[]      @relation(name: "peers")
 } 
 
 model Room{
@@ -52,10 +55,10 @@ model Message{
 }
 
 model Post{
-  id            Int     @id @default(autoincrement())
+  id            Int         @id @default(autoincrement())
   title         String?
   userId        Int
-  user          User  @relation(references: [id], fields: [userId], name: "post")
+  user          User        @relation(references: [id], fields: [userId], name: "post")
   attachment    Boolean?
   body          String
   comments      Comment[]
@@ -63,22 +66,22 @@ model Post{
 }
 
 model Comment{
-  id            Int @id @default(autoincrement())
+  id            Int         @id @default(autoincrement())
   userId        Int
   postId        Int
-  post          Post   @relation(references : [id], fields : [postId])
-  user          User  @relation(references: [id], fields: [userId], name: "comment")
+  post          Post        @relation(references : [id], fields : [postId])
+  user          User        @relation(references: [id], fields: [userId], name: "comment")
   body          String
   threadId      Int?
-  responses     Comment[] @relation(name: "commentThread")
-  responseTo    Comment?  @relation(fields: [threadId], references: [id], name: "commentThread")
+  responses     Comment[]   @relation(name: "commentThread")
+  responseTo    Comment?    @relation(fields: [threadId], references: [id], name: "commentThread")
 }
 enum Role {
   USER
   ADMIN
 }
 
-// generator erd {
-//   provider = "prisma-erd-generator"
-//   theme = "forest"
-// }
+generator erd {
+  provider = "prisma-erd-generator"
+  theme = "forest"
+}

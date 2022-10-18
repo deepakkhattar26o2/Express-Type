@@ -30,6 +30,7 @@ interface signupRequest {
   email     : string;
   password  : string;
   userName  : string;
+  fullName  : string;
 }
 
 const signupRequestValidator = (body: signupRequest): [boolean, string] => {
@@ -40,7 +41,9 @@ const signupRequestValidator = (body: signupRequest): [boolean, string] => {
     return [false, "password"];
   }
   if (!body.userName || body.userName.length < 3) {
-    return [false, "name"];
+    return [false, "username"];
+  }if (!body.fullName || body.fullName.length < 3) {
+    return [false, "fullname"];
   }
   return [true, "success"];
 };
@@ -51,7 +54,7 @@ const signupRequestHandler = async (req: Request, res: Response) => {
   if (!validator[0]) {
     return res.status(409).json({ message: `Invalid ${validator[1]}` });
   }
-  const { email, password, userName } = body;
+  const { email, password, userName, fullName } = body;
   let alreadyExists: User | null = await prisma.user.findFirst({
     where: { email: email },
   });
@@ -76,6 +79,7 @@ const signupRequestHandler = async (req: Request, res: Response) => {
           email: email,
           password: hash,
           userName: userName,
+          fullName: fullName,
           bio : "Hello There!",
         },
       })
