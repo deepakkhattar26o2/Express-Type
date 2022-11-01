@@ -1,5 +1,5 @@
 import express, { Application} from "express";
-import apiRouter from "./apiRouter";
+import apiRouter from "./API";
 import { ValidateDirectory} from "./src/Tools/imageHandler";
 import { Server } from "socket.io";
 import http from 'http';
