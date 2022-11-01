@@ -3,7 +3,7 @@ import { authDetails, CurrentUser } from "./authController";
 // import requestValidator from "../Tools/validator";
 import { NextFunction, Request, Response } from "express";
 import { Message } from "@prisma/client";
-
+import { io } from "../../server";
 const getMessages = async (req: Request, res: Response) => {
   const currUser: CurrentUser = authDetails(req);
   if (!req.query.roomId && !req.query.userId) {
@@ -13,13 +13,18 @@ const getMessages = async (req: Request, res: Response) => {
   if (req.query.roomId) {
     messages = await prisma.message.findMany({
       where: { roomId: Number(req.query.roomId) },
-      include: { responses: true },
+      include: { responses: true, user: {
+        select : {
+          id : true,
+          userName : true
+        }
+      }},
     });
   }
   if (req.query.userId) {
     messages = await prisma.message.findMany({
       where: { OR: [{ receiverId: currUser.id }, { userId: currUser.id }] },
-      include: { responses: true },
+      include: { responses: true, user: true },
     });
   }
   return res.status(200).json({ messages: messages || [] });
@@ -49,6 +54,7 @@ const sendMessage = (req: Request, res: Response, next: NextFunction) => {
       },
     })
     .then((msg: Message) => {
+      io.emit(`room-${msg.roomId}`)
       if (msg.attachment) {
         req.query.obj  = JSON.stringify(msg)
         req.query.attachment = "message-" + String(msg.id);

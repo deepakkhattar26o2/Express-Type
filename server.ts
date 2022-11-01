@@ -1,37 +1,43 @@
-import express, { Application, Request, Response } from "express";
+import express, { Application} from "express";
 import apiRouter from "./apiRouter";
-import {upload, imagePath, multerInst} from "./src/Tools/imageHandler";
+import { ValidateDirectory} from "./src/Tools/imageHandler";
+import { Server } from "socket.io";
+import http from 'http';
 import path from "path";
-import fs from "fs";
-const app: Application = express();
 const cors = require("cors");
+const port = Number(process.env.PORT) || 5000;
 require("dotenv").config();
 
-app.use(cors());
-app.use(express.json());
+const app: Application = express();
 
-app.use("/api", apiRouter);
+const server = http.createServer(app);
 
-const port = Number(process.env.PORT) || 5000;
-
-app.post("/image/:name", upload.single("image"), (req : Request, res : Response) => {
-  res.status(200).json({ message: "worked" });
+const io = new Server(server, {
+  cors :{
+    origin : ['http://localhost:3000']
+  }
 });
+
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/index.html');
+});
+
+io.on('connection', (socket : any) => {
+  console.log('a user connected', socket.id);
+});
+
+app.use(cors());
+
+app.use(express.json());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-app.get("/image/:name", function (req : Request, res : Response) {
-  res.sendFile(imagePath(req.params.name||"default"))
-});
+app.use("/api", apiRouter);
 
-app.listen(port, () => {
-  if (!fs.existsSync(path.join(__dirname, "uploads"))) {
-    fs.mkdirSync(path.join(__dirname, "uploads"));
-    fs.writeFile(path.join(__dirname, "uploads", "default.jpg"), 'Hello content!', function (err) {
-      if (err){
-        console.log(err)
-      }
-    });
-  }
+
+server.listen(port, () => {
+  ValidateDirectory();
   console.log(`Server Listening at http://localhost:${port}`);
 });
+
+export {io}

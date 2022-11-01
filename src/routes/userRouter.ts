@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { authTest, loginRequestHandler, signupRequestHandler, verifyAuth } from "../controllers/authController";
+import { loginRequestHandler, signupRequestHandler, verifyAuth } from "../controllers/authController";
 import { updatePassword, updateProfile, followUser, removeFollower, getActivities, getUser } from "../controllers/userController";
+import { responseHandler, upload } from "../Tools/imageHandler";
 
 const userRouter = Router();
 
@@ -10,7 +11,7 @@ userRouter.post('/signup', signupRequestHandler)
 
 userRouter.post('/login', loginRequestHandler)
 
-userRouter.patch('/update', updateProfile)
+userRouter.patch('/update', updateProfile,upload.single('image'), responseHandler )
 
 userRouter.patch('/changePassword',verifyAuth, updatePassword)
 

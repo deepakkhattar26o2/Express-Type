@@ -21,7 +21,7 @@ const sendMail = (to : string, subject : string, bodyText : string) =>{
         text: bodyText,
     };
     return new Promise((resolve, reject)=>{
-        transporter.sendMail(mailOptions, function (error: Error, info : {}) {
+        transporter.sendMail(mailOptions,  (error: Error, info : {})=>{
             if (error) {
                 reject(error)
             } else {

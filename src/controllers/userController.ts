@@ -49,7 +49,7 @@ const updateProfile = async (
     .update({
       where: { id: user.id },
       data: {
-        bio: String(body.bio) || user.bio,
+        bio: String(body.bio)=="undefined" ? user.bio : String(body.bio),
       },
       include: {
         followers: true,
