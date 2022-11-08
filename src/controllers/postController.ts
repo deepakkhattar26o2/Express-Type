@@ -44,18 +44,18 @@ const getPosts = async (req: Request, res: Response) => {
   if (req.query.search) {
     posts = await prisma.post.findMany({
       where: { title: { contains: String(req.query.search) } },
-      include: { comments: true },
+      include: { user: {select : {id : true, userName: true}}, comments: true },
     });
   } else if (req.query.user) {
     posts = await prisma.post.findMany({
       where: { userId: Number(req.query.user) },
-      include: { comments: true },
+      include: { user: {select : {id : true, userName: true}}, comments: true },
     });
   } 
   else if (req.query.postId){
     post = await prisma.post.findFirst({
       where: { id: Number(req.query.postId) },
-      include: { user: true, comments: true },
+      include: { user: {select : {id : true, userName: true}}, comments: true },
     });  
   }
   else {
@@ -166,8 +166,8 @@ const addComment = async (req: Request, res: Response) => {
       data: {
         userId: currUser.id,
         postId: post.id,
-        body: body.body,
-        threadId: body.threadId || null,
+        body: String(body.body),
+        threadId: Number(body.threadId) || null,
       },
     })
     .then((doc: Comment) => {
