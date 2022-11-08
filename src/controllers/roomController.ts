@@ -53,12 +53,6 @@ interface createRoomBody {
 }
 const createRoom = async (req: Request, res: Response, next : NextFunction) => {
   const currUser: CurrentUser = authDetails(req);
-  // const fields: string[] = ["roomName", "topics"];
-  // const validator: [boolean, string] = requestValidator(req, fields);
-  // console.log(validator);
-  // if (!validator[0]) {
-  //   return res.status(409).json({ message: `Missing ${validator[1]}` });
-  // }
   const body: any = req.query;
   if(!body.roomName || !body.topics){
     return res.status(409).json({message : "Missing required keys!"})
@@ -108,6 +102,16 @@ const joinRoom = async (req: Request, res: Response) => {
   }
   const body: joinRoomBody = req.body;
   const currUser: CurrentUser = authDetails(req);
+  const room = await prisma.room.findFirst({where : {id : body.roomId}});
+  
+  if(!room){
+    return res.status(409).json({message : "rooom doesn't exist!"})
+  }
+
+  if(room.hostId==currUser.id){
+    return res.status(409).json({message: "you're the host of the room!"})
+  }
+
   prisma.room.update({
     where: { id: body.roomId },
     include : {

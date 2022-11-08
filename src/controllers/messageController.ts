@@ -12,7 +12,7 @@ const getMessages = async (req: Request, res: Response) => {
   var messages: Message[] = [];
   if (req.query.roomId) {
     messages = await prisma.message.findMany({
-      where: { roomId: Number(req.query.roomId) },
+      where: { roomId: Number(req.query.roomId), responseTo : null },
       include: { 
       responses: true, 
       responseTo : true,
@@ -35,6 +35,7 @@ const getMessages = async (req: Request, res: Response) => {
 
 const sendMessage = (req: Request, res: Response, next: NextFunction) => {
   const body: any = req.query;
+  console.log(body.threadId)
   if (!body.receiverId && !body.roomId && !body.body) {
     return res.status(409).json({ message: "Missing Parameters!" });
   }
