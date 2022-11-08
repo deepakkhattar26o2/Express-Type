@@ -31,4 +31,4 @@ const sendMail = (to : string, subject : string, bodyText : string) =>{
   });
 }
 
-export {sendMail}
+export default sendMail

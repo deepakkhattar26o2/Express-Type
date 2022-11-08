@@ -1,7 +1,7 @@
 import prisma from "../../prismaClient";
 import { NextFunction, Request, Response } from "express";
-import { sendMail } from "../Tools/nodemailer";
 import { User } from "@prisma/client";
+import emailQueue  from "../Tools/emailQueue";
 const bcr = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const randomString = require('randomstring')
@@ -13,17 +13,15 @@ const confirmEmail = (req: Request, res: Response) => {
   }
   const email = req.body.email;
 
-  const otp: string = randomString.generate(6);
+  const otp: string = randomString.generate(4);
 
-  sendMail(
-    email,
-    "testing smtp",
-    `Your one time password is ${otp}`
-  ).then((doc: any) => {
-      res.status(200).json({ otp: otp, email: email, message: doc.info });
-  }).catch((err: Error) => {
-      res.status(500).json({ message: err.message });
-  });
+  emailQueue.add({email, otp}, {
+    attempts: 5,
+    delay: 5000
+  })
+
+  res.status(200).json({email : email, otp : otp})
+  
 };
 
 interface signupRequest {

@@ -71,7 +71,7 @@ model Comment{
   postId        Int
   post          Post        @relation(references : [id], fields : [postId])
   user          User        @relation(references: [id], fields: [userId], name: "comment")
-  body          String
+  body          String?
   threadId      Int?
   responses     Comment[]   @relation(name: "commentThread")
   responseTo    Comment?    @relation(fields: [threadId], references: [id], name: "commentThread")

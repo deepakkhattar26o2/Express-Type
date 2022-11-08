@@ -1,11 +1,13 @@
 import { Router } from "express";
-import { loginRequestHandler, signupRequestHandler, verifyAuth } from "../controllers/authController";
+import { confirmEmail, loginRequestHandler, signupRequestHandler, verifyAuth } from "../controllers/authController";
 import { updatePassword, updateProfile, followUser, removeFollower, getActivities, getUser } from "../controllers/userController";
 import { responseHandler, upload } from "../Tools/imageHandler";
 
 const userRouter = Router();
 
 userRouter.get('/', getUser)
+
+userRouter.get('/verify', confirmEmail)
 
 userRouter.post('/signup', signupRequestHandler)
 
