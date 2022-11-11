@@ -5,8 +5,8 @@ import { Server } from "socket.io";
 import http from 'http';
 import path from "path";
 const cors = require("cors");
-const port = Number(process.env.PORT) || 5000;
 require("dotenv").config();
+const port = Number(process.env.PORT) || 5000;
 
 const app: Application = express();
 

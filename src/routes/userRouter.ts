@@ -1,24 +1,26 @@
 import { Router } from "express";
-import { loginRequestHandler, signupRequestHandler, verifyAuth } from "../controllers/authController";
+import { confirmEmail, loginRequestHandler, signupRequestHandler, verifyAuth } from "../controllers/authController";
 import { updatePassword, updateProfile, followUser, removeFollower, getActivities, getUser } from "../controllers/userController";
 import { responseHandler, upload } from "../Tools/imageHandler";
 
 const userRouter = Router();
 
-userRouter.get('/', getUser)
+userRouter.get('/',verifyAuth, getUser)
+
+userRouter.get('/verify', confirmEmail)
 
 userRouter.post('/signup', signupRequestHandler)
 
 userRouter.post('/login', loginRequestHandler)
 
-userRouter.patch('/update', updateProfile,upload.single('image'), responseHandler )
+userRouter.patch('/update',verifyAuth, updateProfile,upload.single('image'), responseHandler )
 
 userRouter.patch('/changePassword',verifyAuth, updatePassword)
 
-userRouter.post('/follow', followUser)
+userRouter.post('/follow',verifyAuth, followUser)
 
-userRouter.post('/unfollow', removeFollower)
+userRouter.post('/unfollow',verifyAuth, removeFollower)
 
-userRouter.get('/activity', getActivities)
+userRouter.get('/activity', verifyAuth,getActivities)
 
 export default userRouter;
