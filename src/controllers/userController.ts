@@ -49,7 +49,7 @@ const updateProfile = async (
     .update({
       where: { id: user.id },
       data: {
-        bio: String(body.bio)=="undefined" ? user.bio : String(body.bio),
+        bio: String(body.bio) == "undefined" ? user.bio : String(body.bio),
       },
       include: {
         followers: true,
@@ -165,18 +165,48 @@ const getActivities = async (req: Request, res: Response) => {
 };
 
 const getUser = async (req: Request, res: Response) => {
-  if (!req.query.userId) {
-    return res.status(409).json({ message: "missing user id" });
+  if (req.query.all) {
+    let users: any = await prisma.user.findMany({
+      select :{
+        id : true,
+        userName : true,
+        fullName : true,
+        email    : true
+      }
+    });
+    return res.status(200).json({ users: users });
   }
-  let user: User | null = await prisma.user.findFirst({
-    where: { id: Number(req.query.userId) },
-    include:{followers: true, following: true, posts: true, rooms: true}
+  if (!req.query.userId && !req.query.search) {
+    return res.status(409).json({ message: "missing search key" });
+  }
+  if (req.query.userId) {
+    let user: any = await prisma.user.findFirst({
+      where: { id: Number(req.query.userId) },
+      include : {
+        rooms     : true,
+        followers : true,
+        following : true,
+        posts     : true
+      }
+    });
+    delete user?.password
+    return res.status(200).json({ user: user });
+  }
+  let users: any = await prisma.user.findMany({
+    where: {
+      OR: [
+        { userName: { contains: String(req.query.search) } },
+        { fullName: { contains: String(req.query.search) } },
+      ],
+    },
+    select :{
+      id : true,
+      userName : true,
+      fullName : true,
+      email    : true
+    }
   });
-
-  if(!user){
-    return res.status(409).json({message : "user not found!"})
-  }
-  return res.status(200).json({user : user});
+  return res.status(200).json({ users: users });
 };
 export {
   updatePassword,
@@ -184,5 +214,5 @@ export {
   removeFollower,
   followUser,
   getActivities,
-  getUser
+  getUser,
 };
