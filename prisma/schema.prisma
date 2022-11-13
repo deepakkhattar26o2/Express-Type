@@ -81,7 +81,7 @@ enum Role {
   ADMIN
 }
 
-generator erd {
-  provider = "prisma-erd-generator"
-  theme = "forest"
-}
+// generator erd {
+//   provider = "prisma-erd-generator"
+//   theme = "forest"
+// }

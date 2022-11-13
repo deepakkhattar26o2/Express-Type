@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+   name: kode-klubs-pod
+spec:
+   containers:
+   - name: kode-klubs
+     image: deepakkhattar26o2/kode-klubs:latest
+     ports:
+     - containerPort: 5000
