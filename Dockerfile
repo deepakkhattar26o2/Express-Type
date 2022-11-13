@@ -8,8 +8,6 @@ COPY . .
 
 RUN npm install --production
 
-RUN npm install -g ts-node
-
 EXPOSE 5000
 
 CMD npm run serve

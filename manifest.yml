@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-   name: kode-klubs-pod
+   name: kode-klubs
 spec:
    containers:
    - name: kode-klubs
