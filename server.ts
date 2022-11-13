@@ -18,9 +18,7 @@ const io = new Server(server, {
   }
 });
 
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
-});
+app.get('/', (req, res)=>{res.send('Welcome to Kode Klubs')})
 
 io.on('connection', (socket : any) => {
   console.log('a user connected', socket.id);
