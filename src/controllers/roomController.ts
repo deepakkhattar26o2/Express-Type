@@ -3,6 +3,7 @@ import { NextFunction, Request, Response } from "express";
 import prisma from "../../prismaClient";
 import { authDetails, CurrentUser } from "./authController";
 import requestValidator from "../Tools/validator";
+import { io } from "../../server";
 
 const getRooms = async (req: Request, res: Response) => {
   var rooms: Room[] = [];
@@ -18,6 +19,26 @@ const getRooms = async (req: Request, res: Response) => {
           { topics: { has: String(req.query.search) } },
         ],
       },
+      include:{
+        host  :{
+            select :{
+              id : true,
+              userName: true,
+              fullName: true,
+              bio: true,
+              password : false
+            }
+        },
+        members : {
+          select:{
+            id:       true,
+            userName: true,
+            fullName: true,
+            bio:      true,
+            password: false
+          }
+        }
+      }
     });
   } else if (req.query.roomId) {
     let room = await prisma.room.findFirst({
@@ -26,11 +47,20 @@ const getRooms = async (req: Request, res: Response) => {
         id: true,
         roomName: true,
         description: true,
-        host: true,
+        host: {select : {
+          id: true,
+          userName: true,
+          fullName: true,
+          bio     : true,
+          password: false
+        }},
         members: {
           select: {
             id: true,
             userName: true,
+            fullName: true,
+            bio     : true,
+            password: false
           },
         },
       },
@@ -119,7 +149,7 @@ const joinRoom = async (req: Request, res: Response) => {
   }
   const body: joinRoomBody = req.body;
   const currUser: CurrentUser = authDetails(req);
-  const room = await prisma.room.findFirst({ where: { id: body.roomId } });
+  const room = await prisma.room.findFirst({ where: { id: body.roomId }, include: {members : true} });
 
   if (!room) {
     return res.status(409).json({ message: "rooom doesn't exist!" });
@@ -129,11 +159,23 @@ const joinRoom = async (req: Request, res: Response) => {
     return res.status(409).json({ message: "you're the host of the room!" });
   }
 
+  if(room.members.length==1000){
+    return res.status(409).json({message : "Room has reached maximum capacity!"})
+  }
+
+  if(room.members.some(member=>member.id==currUser.id)){
+    return res.status(409).json({message : "You've already joined this room!"})
+  }
+  
   prisma.room
     .update({
       where: { id: body.roomId },
       include: {
-        members: true,
+        members: {select:{
+          id: true,
+          userName: true,
+          fullName: true
+        }},
       },
       data: {
         members: {
@@ -142,13 +184,14 @@ const joinRoom = async (req: Request, res: Response) => {
       },
     })
     .then((room: Room) => {
+      io.emit(`room-update-${room.id}`)
       return res.status(200).json({ room: room });
     })
     .catch((err: Error) => {
       return res.status(500).json({ message: err.message });
     });
 };
-const leaveRoom = (req: Request, res: Response) => {
+const leaveRoom = async (req: Request, res: Response) => {
   const fields: string[] = ["roomId"];
   const validator: [boolean, string] = requestValidator(req, fields);
   if (!validator[0]) {
@@ -156,6 +199,12 @@ const leaveRoom = (req: Request, res: Response) => {
   }
   const body: joinRoomBody = req.body;
   const currUser: CurrentUser = authDetails(req);
+
+  let room : Room | null = await prisma.room.findFirst({where : {id : body.roomId}});
+  if(!room){
+    return res.status(409).json({message : "Room doesn't exist!"})
+  }
+
   prisma.room
     .update({
       where: {
@@ -167,7 +216,8 @@ const leaveRoom = (req: Request, res: Response) => {
         },
       },
     })
-    .then((room: Room | null) => {
+    .then((room: Room) => {
+      io.emit(`room-update-${room.id}`)
       return res.status(200).json({ room: room, user: currUser });
     })
     .catch((err: Error) => {
@@ -198,10 +248,12 @@ const removeMember = async (req: Request, res: Response) => {
       },
     })
     .then((updatedRoom: Room) => {
+      io.emit(`room-update-${updatedRoom.id}`)
       return res.status(200).json({ updatedRoom: updatedRoom });
     })
     .catch((err: Error) => {
       return res.status(500).json({ message: err.message });
     });
 };
+
 export { getRooms, createRoom, joinRoom, leaveRoom, deleteRoom, removeMember };
