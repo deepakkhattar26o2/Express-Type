@@ -48,7 +48,7 @@ const sendMessage = (req: Request, res: Response, next: NextFunction) => {
         body: String(body.body),
         roomId: Number(body.roomId) || null,
         threadId: Number(body.threadId) || null,
-        attachment: Boolean(body.attachment) || false,
+        attachment: Boolean(JSON.parse(body.attachment)) || false,
       },
       include: {
         user: {

@@ -23,7 +23,7 @@ const updatePassword = (req: Request, res: Response) => {
           password: hash,
         },
       })
-      .then((doc) => {
+      .then((updatedUser : User) => {
         return res.status(200).json(User);
       })
       .catch((err: Error) => {

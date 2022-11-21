@@ -94,13 +94,13 @@ const deleteRoom = async (req: Request, res: Response) => {
 };
 
 interface createRoomBody {
-  roomName: string;
+  roomName?: string;
   description?: string;
-  topics: string;
+  topics?: string;
 }
 const createRoom = async (req: Request, res: Response, next: NextFunction) => {
   const currUser: CurrentUser = authDetails(req);
-  const body: any = req.query;
+  const body: createRoomBody = req.query;
   if (!body.roomName || !body.topics) {
     return res.status(409).json({ message: "Missing required keys!" });
   }

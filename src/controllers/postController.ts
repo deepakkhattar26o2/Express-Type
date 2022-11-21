@@ -14,9 +14,9 @@ const createPost = (req: Request, res: Response, next: NextFunction) => {
     .create({
       data: {
         userId: currUser.id,
-        attachment: Boolean(body.attachment) || false,
-        body: body.body,
-        title: body.title,
+        attachment: Boolean(JSON.parse(body.attachment)) || false,
+        body: String(body.body),
+        title: String(body.title),
       },
     })
     .then((doc: Post) => {
@@ -70,17 +70,17 @@ const getPosts = async (req: Request, res: Response) => {
 };
 
 interface updatePostBody {
-  postId: number;
+  postId?: number;
   body?: string;
   attachment?: boolean;
-  title: string;
+  title?: string;
 }
 
 const updatePost = async (req: Request, res: Response, next: NextFunction) => {
   if (!req.body.postId) {
     return res.status(409).json({ message: "missing post id" });
   }
-  const body: updatePostBody = req.body;
+  const body: updatePostBody = req.query;
   const currUser: CurrentUser = authDetails(req);
   const post: Post | null = await prisma.post.findFirst({
     where: { id: req.body.postId },
@@ -97,9 +97,9 @@ const updatePost = async (req: Request, res: Response, next: NextFunction) => {
         id: post.id,
       },
       data: {
-        body: body.body || post.body,
-        attachment: body.attachment || post.attachment,
-        title: body.title || post.title,
+        body: String(body.body) || post.body,
+        attachment: Boolean(JSON.parse(String(body.attachment))) || post.attachment,
+        title: String(body.title) || post.title,
       },
     })
     .then((doc: Post) => {
