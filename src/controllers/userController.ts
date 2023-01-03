@@ -1,14 +1,16 @@
 import { Post, User } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import prisma from "../../prismaClient";
-import { authDetails, CurrentUser } from "./authController";
+import { authDetails } from "./authController";
+import { CurrentUser } from "../../TypeDef";
+
 const bcr = require("bcrypt");
 
-interface updatePasswordRequestBody {
-  password: string;
-}
 const updatePassword = (req: Request, res: Response) => {
-  const body: updatePasswordRequestBody = req.body;
+  const body: any = req.body;
+  if (!body.password) {
+    return res.status(409).json({ message: "password field is missing!" });
+  }
   const User: CurrentUser = authDetails(req);
   bcr.hash(body.password, 10, (err: Error, hash: string) => {
     if (err) {
@@ -23,7 +25,7 @@ const updatePassword = (req: Request, res: Response) => {
           password: hash,
         },
       })
-      .then((updatedUser : User) => {
+      .then((updatedUser: User) => {
         return res.status(200).json(User);
       })
       .catch((err: Error) => {
@@ -167,12 +169,12 @@ const getActivities = async (req: Request, res: Response) => {
 const getUser = async (req: Request, res: Response) => {
   if (req.query.all) {
     let users: any = await prisma.user.findMany({
-      select :{
-        id : true,
-        userName : true,
-        fullName : true,
-        email    : true
-      }
+      select: {
+        id: true,
+        userName: true,
+        fullName: true,
+        email: true,
+      },
     });
     return res.status(200).json({ users: users });
   }
@@ -182,14 +184,14 @@ const getUser = async (req: Request, res: Response) => {
   if (req.query.userId) {
     let user: any = await prisma.user.findFirst({
       where: { id: Number(req.query.userId) },
-      include : {
-        rooms     : true,
-        followers : true,
-        following : true,
-        posts     : true
-      }
+      include: {
+        rooms: true,
+        followers: true,
+        following: true,
+        posts: true,
+      },
     });
-    delete user?.password
+    delete user?.password;
     return res.status(200).json({ user: user });
   }
   let users: any = await prisma.user.findMany({
@@ -199,12 +201,12 @@ const getUser = async (req: Request, res: Response) => {
         { fullName: { contains: String(req.query.search) } },
       ],
     },
-    select :{
-      id : true,
-      userName : true,
-      fullName : true,
-      email    : true
-    }
+    select: {
+      id: true,
+      userName: true,
+      fullName: true,
+      email: true,
+    },
   });
   return res.status(200).json({ users: users });
 };

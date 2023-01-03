@@ -1,9 +1,10 @@
-import { User, Room, Role } from "@prisma/client";
+import { Room, Role } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import prisma from "../../prismaClient";
-import { authDetails, CurrentUser } from "./authController";
+import { authDetails } from "./authController";
 import requestValidator from "../Tools/validator";
 import { io } from "../../server";
+import { CurrentUser, createRoomBody } from "../../TypeDef";
 
 const getRooms = async (req: Request, res: Response) => {
   var rooms: Room[] = [];
@@ -19,26 +20,26 @@ const getRooms = async (req: Request, res: Response) => {
           { topics: { has: String(req.query.search) } },
         ],
       },
-      include:{
-        host  :{
-            select :{
-              id : true,
-              userName: true,
-              fullName: true,
-              bio: true,
-              password : false
-            }
-        },
-        members : {
-          select:{
-            id:       true,
+      include: {
+        host: {
+          select: {
+            id: true,
             userName: true,
             fullName: true,
-            bio:      true,
-            password: false
-          }
-        }
-      }
+            bio: true,
+            password: false,
+          },
+        },
+        members: {
+          select: {
+            id: true,
+            userName: true,
+            fullName: true,
+            bio: true,
+            password: false,
+          },
+        },
+      },
     });
   } else if (req.query.roomId) {
     let room = await prisma.room.findFirst({
@@ -47,20 +48,22 @@ const getRooms = async (req: Request, res: Response) => {
         id: true,
         roomName: true,
         description: true,
-        host: {select : {
-          id: true,
-          userName: true,
-          fullName: true,
-          bio     : true,
-          password: false
-        }},
+        host: {
+          select: {
+            id: true,
+            userName: true,
+            fullName: true,
+            bio: true,
+            password: false,
+          },
+        },
         members: {
           select: {
             id: true,
             userName: true,
             fullName: true,
-            bio     : true,
-            password: false
+            bio: true,
+            password: false,
           },
         },
       },
@@ -93,11 +96,6 @@ const deleteRoom = async (req: Request, res: Response) => {
   return res.status(200).json({ message: "Room deleted Successfully" });
 };
 
-interface createRoomBody {
-  roomName?: string;
-  description?: string;
-  topics?: string;
-}
 const createRoom = async (req: Request, res: Response, next: NextFunction) => {
   const currUser: CurrentUser = authDetails(req);
   const body: createRoomBody = req.query;
@@ -138,18 +136,18 @@ const createRoom = async (req: Request, res: Response, next: NextFunction) => {
       return res.status(500).json({ message: err.message });
     });
 };
-interface joinRoomBody {
-  roomId: number;
-}
 const joinRoom = async (req: Request, res: Response) => {
   const fields: string[] = ["roomId"];
   const validator: [boolean, string] = requestValidator(req, fields);
   if (!validator[0]) {
     return res.status(409).json({ message: `Missing ${validator[1]}` });
   }
-  const body: joinRoomBody = req.body;
+  const body: any = req.body;
   const currUser: CurrentUser = authDetails(req);
-  const room = await prisma.room.findFirst({ where: { id: body.roomId }, include: {members : true} });
+  const room = await prisma.room.findFirst({
+    where: { id: body.roomId },
+    include: { members: true },
+  });
 
   if (!room) {
     return res.status(409).json({ message: "rooom doesn't exist!" });
@@ -159,23 +157,29 @@ const joinRoom = async (req: Request, res: Response) => {
     return res.status(409).json({ message: "you're the host of the room!" });
   }
 
-  if(room.members.length==1000){
-    return res.status(409).json({message : "Room has reached maximum capacity!"})
+  if (room.members.length == 1000) {
+    return res
+      .status(409)
+      .json({ message: "Room has reached maximum capacity!" });
   }
 
-  if(room.members.some(member=>member.id==currUser.id)){
-    return res.status(409).json({message : "You've already joined this room!"})
+  if (room.members.some((member) => member.id == currUser.id)) {
+    return res
+      .status(409)
+      .json({ message: "You've already joined this room!" });
   }
-  
+
   prisma.room
     .update({
       where: { id: body.roomId },
       include: {
-        members: {select:{
-          id: true,
-          userName: true,
-          fullName: true
-        }},
+        members: {
+          select: {
+            id: true,
+            userName: true,
+            fullName: true,
+          },
+        },
       },
       data: {
         members: {
@@ -184,7 +188,7 @@ const joinRoom = async (req: Request, res: Response) => {
       },
     })
     .then((room: Room) => {
-      io.emit(`room-update-${room.id}`)
+      io.emit(`room-update-${room.id}`);
       return res.status(200).json({ room: room });
     })
     .catch((err: Error) => {
@@ -197,12 +201,14 @@ const leaveRoom = async (req: Request, res: Response) => {
   if (!validator[0]) {
     return res.status(409).json({ message: `Missing ${validator[1]}` });
   }
-  const body: joinRoomBody = req.body;
+  const body: any = req.body;
   const currUser: CurrentUser = authDetails(req);
 
-  let room : Room | null = await prisma.room.findFirst({where : {id : body.roomId}});
-  if(!room){
-    return res.status(409).json({message : "Room doesn't exist!"})
+  let room: Room | null = await prisma.room.findFirst({
+    where: { id: body.roomId },
+  });
+  if (!room) {
+    return res.status(409).json({ message: "Room doesn't exist!" });
   }
 
   prisma.room
@@ -217,7 +223,7 @@ const leaveRoom = async (req: Request, res: Response) => {
       },
     })
     .then((room: Room) => {
-      io.emit(`room-update-${room.id}`)
+      io.emit(`room-update-${room.id}`);
       return res.status(200).json({ room: room, user: currUser });
     })
     .catch((err: Error) => {
@@ -248,7 +254,7 @@ const removeMember = async (req: Request, res: Response) => {
       },
     })
     .then((updatedRoom: Room) => {
-      io.emit(`room-update-${updatedRoom.id}`)
+      io.emit(`room-update-${updatedRoom.id}`);
       return res.status(200).json({ updatedRoom: updatedRoom });
     })
     .catch((err: Error) => {

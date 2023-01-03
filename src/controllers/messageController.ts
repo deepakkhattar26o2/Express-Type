@@ -1,9 +1,9 @@
 import prisma from "../../prismaClient";
-import { authDetails, CurrentUser } from "./authController";
+import { authDetails } from "./authController";
 import { NextFunction, Request, Response } from "express";
 import { Message } from "@prisma/client";
 import { io } from "../../server";
-
+import { CurrentUser } from "../../TypeDef";
 const getMessages = async (req: Request, res: Response) => {
   const currUser: CurrentUser = authDetails(req);
   if (!req.query.roomId && !req.query.userId) {
@@ -12,22 +12,26 @@ const getMessages = async (req: Request, res: Response) => {
   var messages: Message[] = [];
   if (req.query.roomId) {
     messages = await prisma.message.findMany({
-      where: { roomId: Number(req.query.roomId), responseTo : null },
-      include: { 
-      responses: true, 
-      responseTo : true,
-      user: {
-        select : {
-          id : true,
-          userName : true
-        }
-      }},
+      where: { roomId: Number(req.query.roomId), responseTo: null },
+      include: {
+        responses: true,
+        responseTo: true,
+        user: {
+          select: {
+            id: true,
+            userName: true,
+          },
+        },
+      },
     });
   }
   if (req.query.userId) {
     messages = await prisma.message.findMany({
       where: { OR: [{ receiverId: currUser.id }, { userId: currUser.id }] },
-      include: { responses: true, user: {select : {id : true, userName : true}} },
+      include: {
+        responses: true,
+        user: { select: { id: true, userName: true } },
+      },
     });
   }
   return res.status(200).json({ messages: messages || [] });
@@ -35,7 +39,7 @@ const getMessages = async (req: Request, res: Response) => {
 
 const sendMessage = (req: Request, res: Response, next: NextFunction) => {
   const body: any = req.query;
-  console.log(body.threadId)
+  console.log(body.threadId);
   if (!body.receiverId && !body.roomId && !body.body) {
     return res.status(409).json({ message: "Missing Parameters!" });
   }
@@ -52,19 +56,19 @@ const sendMessage = (req: Request, res: Response, next: NextFunction) => {
       },
       include: {
         user: {
-          select:{
-            id : true,
-            userName : true
-          }
+          select: {
+            id: true,
+            userName: true,
+          },
         },
         room: true,
         responseTo: true,
       },
     })
     .then((msg: Message) => {
-      io.emit(`room-${msg.roomId}`)
+      io.emit(`room-${msg.roomId}`);
       if (msg.attachment) {
-        req.query.obj  = JSON.stringify(msg)
+        req.query.obj = JSON.stringify(msg);
         req.query.attachment = "message-" + String(msg.id);
         next();
       } else {
