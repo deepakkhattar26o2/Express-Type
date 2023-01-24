@@ -63,7 +63,7 @@ const ValidateDirectory = ()=>{
 const responseHandler =  (req: Request, res: Response) => {
   if (req.query.obj) {
     let obj = JSON.parse(String(req.query.obj))
-    return res.status(200).json({ room : obj });
+    return res.status(200).json({ data : obj });
   } else {
     res.status(200).json({ message: "data not found!" });
   }}

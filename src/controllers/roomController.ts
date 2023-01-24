@@ -2,7 +2,7 @@ import { Room, Role } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import prisma from "../../prismaClient";
 import { authDetails } from "./authController";
-import requestValidator from "../Tools/validator";
+import requestValidator from "../Helpers/validator";
 import { io } from "../../server";
 import { CurrentUser, createRoomBody } from "../../TypeDef";
 

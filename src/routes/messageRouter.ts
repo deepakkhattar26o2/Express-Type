@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getMessages, sendMessage } from "../controllers/messageController";
-import {responseHandler, upload} from "../Tools/imageHandler";
+import {responseHandler, upload} from "../Helpers/imageHandler";
 const messageRouter = Router();
 
 messageRouter.get('/', getMessages);

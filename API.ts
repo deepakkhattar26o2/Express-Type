@@ -4,7 +4,7 @@ import messageRouter from "./src/routes/messageRouter";
 import postRouter from "./src/routes/postRouter";
 import roomRouter from "./src/routes/roomRouter";
 import userRouter from "./src/routes/userRouter";
-import {imagePath} from "./src/Tools/imageHandler";
+import {imagePath} from "./src/Helpers/imageHandler";
 
 const apiRouter = Router();
 

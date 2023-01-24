@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { confirmEmail, loginRequestHandler, signupRequestHandler, verifyAuth } from "../controllers/authController";
 import { updatePassword, updateProfile, followUser, removeFollower, getActivities, getUser } from "../controllers/userController";
-import { responseHandler, upload } from "../Tools/imageHandler";
+import { responseHandler, upload } from "../Helpers/imageHandler";
 
 const userRouter = Router();
 

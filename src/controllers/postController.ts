@@ -1,14 +1,14 @@
 import { authDetails } from "./authController";
 import e, { NextFunction, Request, Response } from "express";
 import prisma from "../../prismaClient";
-import { Post, Comment } from "@prisma/client";
-import requestValidator from "../Tools/validator";
+import { Post, Comment, Room } from "@prisma/client";
+import requestValidator from "../Helpers/validator";
 import { CurrentUser, commentBody, updatePostBody } from "../../TypeDef";
 const createPost = (req: Request, res: Response, next: NextFunction) => {
   const body: any = req.query;
   const currUser: CurrentUser = authDetails(req);
   if (!body.title || !body.body) {
-    return res.status(409).json({ message: "Missing Title or post body" });
+    return res.status(400).json({ message: "Missing Title or post body" });
   }
   prisma.post
     .create({
@@ -35,7 +35,7 @@ const createPost = (req: Request, res: Response, next: NextFunction) => {
 
 const getPosts = async (req: Request, res: Response) => {
   if (!req.query.search && !req.query.user && !req.query.postId) {
-    return res.status(409).json({ message: "missing key!" });
+    return res.status(400).json({ message: "missing key!" });
   }
 
   var posts: Post[] = [];
@@ -76,7 +76,7 @@ const getPosts = async (req: Request, res: Response) => {
 
 const updatePost = async (req: Request, res: Response, next: NextFunction) => {
   if (!req.body.postId) {
-    return res.status(409).json({ message: "missing post id" });
+    return res.status(400).json({ message: "missing post id" });
   }
   const body: updatePostBody = req.query;
   const currUser: CurrentUser = authDetails(req);
@@ -84,7 +84,7 @@ const updatePost = async (req: Request, res: Response, next: NextFunction) => {
     where: { id: req.body.postId },
   });
   if (!post) {
-    return res.status(409).json({ message: "post not found!" });
+    return res.status(404).json({ message: "post not found!" });
   }
   if (post.userId != currUser.id) {
     return res.status(409).json({ message: "You cannot update this post!" });
@@ -117,14 +117,14 @@ const updatePost = async (req: Request, res: Response, next: NextFunction) => {
 
 const deletePost = async (req: Request, res: Response) => {
   if (!req.query.postId) {
-    return res.status(409).json({ message: "missig post id!" });
+    return res.status(400).json({ message: "missig post id!" });
   }
   const currUser: CurrentUser = authDetails(req);
   let post: Post | null = await prisma.post.findFirst({
     where: { id: Number(req.query.postId) },
   });
   if (!post) {
-    return res.status(409).json({ message: "Post not found!" });
+    return res.status(404).json({ message: "Post not found!" });
   }
   if (post.userId != currUser.id) {
     return res.status(409).json({ message: "You cannot delete this post!" });
@@ -144,14 +144,14 @@ const addComment = async (req: Request, res: Response) => {
   const currUser: CurrentUser = authDetails(req);
   const validator: [boolean, string] = requestValidator(req, fields);
   if (!validator[0]) {
-    return res.status(409).json({ message: `missing ${validator[1]}` });
+    return res.status(400).json({ message: `missing ${validator[1]}` });
   }
   const body: commentBody = req.body;
   let post: Post | null = await prisma.post.findFirst({
     where: { id: body.postId },
   });
   if (!post) {
-    return res.status(409).json({ message: "post not found" });
+    return res.status(404).json({ message: "post not found" });
   }
   prisma.comment
     .create({
@@ -172,14 +172,14 @@ const addComment = async (req: Request, res: Response) => {
 
 const deleteComment = async (req: Request, res: Response) => {
   if (!req.query.commendId) {
-    return res.status(409).json({ message: "missing comment id" });
+    return res.status(400).json({ message: "missing comment id" });
   }
   const currUser: CurrentUser = authDetails(req);
   let comment: Comment | null = await prisma.comment.findFirst({
     where: { id: Number(req.query.commentId) },
   });
   if (!comment) {
-    return res.status(409).json({ message: "comment not found!" });
+    return res.status(404).json({ message: "comment not found!" });
   }
   if (comment.userId != currUser.id) {
     return res.status(409).json({ message: "cannot delete this comment!" });
@@ -194,6 +194,57 @@ const deleteComment = async (req: Request, res: Response) => {
     });
 };
 
+const likePost = async (req: Request, res: Response) => {
+  const currUser: CurrentUser = authDetails(req);
+  if (!req.query.postId) {
+    return res.status(400).json({ message: "missing post id" });
+  }
+  let post: Post | null = await prisma.post.findFirst({
+    where: { id: Number(req.query.postId) },
+  });
+  if (!post) {
+    return res.status(404).json({ message: "post doesn't exist!" });
+  }
+  prisma.post
+    .update({
+      where: { id: post.id },
+      data: {
+        likedBy: {
+          connect: [{ id: currUser.id }],
+        },
+      },
+    })
+    .then((updatedPost : Post)=>{return res.status(200).json({post : updatedPost})})
+    .catch((err: Error) => {
+      res.status(500).json({ message: err.message });
+    });
+};
+
+const unlikePost = async (req: Request, res: Response) => {
+  const currUser: CurrentUser = authDetails(req);
+  if (!req.query.postId) {
+    return res.status(400).json({ message: "missing post id" });
+  }
+  let post = await prisma.post.findFirst({
+    where: { id: Number(req.query.postId) },
+    include: { likedBy: true },
+  });
+  if (!post) {
+    return res.status(404).json({ message: "post doesn't exist!" });
+  }
+  prisma.post
+    .update({
+      where: { id: post.id },
+      data: {
+        likedBy: {
+          disconnect: [{ id: currUser.id }],
+        },
+      },
+    })
+    .then( (updatedPost : Post)=>{return res.status(200).json({post : updatedPost})})
+    .catch( (err : Error)=>{return res.status(500).json({message : err.message})});
+};
+
 export {
   createPost,
   getPosts,
@@ -201,4 +252,6 @@ export {
   deletePost,
   addComment,
   deleteComment,
+  likePost,
+  unlikePost
 };

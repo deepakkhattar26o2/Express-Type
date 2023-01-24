@@ -1,6 +1,6 @@
 import { createRoom, deleteRoom, getRooms, joinRoom, leaveRoom } from "../controllers/roomController";
 import { Router} from "express";
-import { responseHandler, upload } from "../Tools/imageHandler";
+import { responseHandler, upload } from "../Helpers/imageHandler";
 const roomRouter = Router();
 
 roomRouter.get('/', getRooms);

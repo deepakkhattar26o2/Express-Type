@@ -7,7 +7,7 @@ import { CurrentUser } from "../../TypeDef";
 const getMessages = async (req: Request, res: Response) => {
   const currUser: CurrentUser = authDetails(req);
   if (!req.query.roomId && !req.query.userId) {
-    return res.status(409).json({ message: "Missing query" });
+    return res.status(400).json({ message: "Missing query" });
   }
   var messages: Message[] = [];
   if (req.query.roomId) {
@@ -41,7 +41,7 @@ const sendMessage = (req: Request, res: Response, next: NextFunction) => {
   const body: any = req.query;
   console.log(body.threadId);
   if (!body.receiverId && !body.roomId && !body.body) {
-    return res.status(409).json({ message: "Missing Parameters!" });
+    return res.status(400).json({ message: "Missing Parameters!" });
   }
   const currUser: CurrentUser = authDetails(req);
   prisma.message

@@ -1,7 +1,7 @@
 import prisma from "../../prismaClient";
 import { NextFunction, Request, Response } from "express";
 import { User } from "@prisma/client";
-import emailQueue from "../Tools/emailQueue";
+import emailQueue from "../Helpers/emailQueue";
 const bcr = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const randomString = require("randomstring");
@@ -46,7 +46,7 @@ const signupRequestHandler = async (req: Request, res: Response) => {
   const body: signupRequest = req.body;
   const validator = signupRequestValidator(body);
   if (!validator[0]) {
-    return res.status(409).json({ message: `Invalid ${validator[1]}` });
+    return res.status(400).json({ message: `Invalid ${validator[1]}` });
   }
   const { email, password, userName, fullName } = body;
   let alreadyExists: User | null = await prisma.user.findFirst({
@@ -103,7 +103,7 @@ const loginRequestHandler = async (req: Request, res: Response) => {
   const body: loginRequest = req.body;
   let validator = loginRequestValidator(body);
   if (!validator[0]) {
-    return res.status(409).json({ message: `Invalid ${validator[1]}` });
+    return res.status(400).json({ message: `Invalid ${validator[1]}` });
   }
   const { email, password, userName } = body;
   var alreadyExists: User | null = await prisma.user.findFirst({
@@ -111,7 +111,7 @@ const loginRequestHandler = async (req: Request, res: Response) => {
   });
 
   if (!alreadyExists) {
-    return res.status(409).json({ message: "Invalid Credentials!" });
+    return res.status(400).json({ message: "Invalid Credentials!" });
   }
 
   bcr.compare(password, alreadyExists.password, (err: Error, same: boolean) => {
@@ -119,7 +119,7 @@ const loginRequestHandler = async (req: Request, res: Response) => {
       return res.status(500).json({ message: err.message });
     }
     if (!same) {
-      return res.status(409).json({ message: "Password doesn't match!" });
+      return res.status(400).json({ message: "Password doesn't match!" });
     }
     if (same) {
       const mdoc: any = Object.assign({}, alreadyExists);
@@ -142,7 +142,7 @@ const verifyAuth = (req: Request, res: Response, next: NextFunction) => {
     jwt.verify(token, process.env.SECRET_KEY);
     next();
   } catch (err) {
-    return res.status(409).json({ Message: "Auth Failed!" });
+    return res.status(400).json({ Message: "Auth Failed!" });
   }
 };
 
@@ -150,6 +150,7 @@ const authTest = (req: Request, res: Response) => {
   const currUser: CurrentUser = authDetails(req);
   return res.status(200).json(currUser);
 };
+
 export {
   signupRequestHandler,
   loginRequestHandler,

@@ -1,5 +1,5 @@
 import {getPosts, createPost, updatePost, deleteComment, deletePost, addComment } from "../controllers/postController";
-import { responseHandler, upload } from "../Tools/imageHandler";
+import { responseHandler, upload } from "../Helpers/imageHandler";
 import { Router } from "express";
 const postRouter = Router();
 

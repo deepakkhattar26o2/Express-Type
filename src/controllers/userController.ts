@@ -9,7 +9,7 @@ const bcr = require("bcrypt");
 const updatePassword = (req: Request, res: Response) => {
   const body: any = req.body;
   if (!body.password) {
-    return res.status(409).json({ message: "password field is missing!" });
+    return res.status(400).json({ message: "password field is missing!" });
   }
   const User: CurrentUser = authDetails(req);
   bcr.hash(body.password, 10, (err: Error, hash: string) => {
@@ -74,14 +74,14 @@ const updateProfile = async (
 
 const followUser = async (req: Request, res: Response) => {
   if (!req.query.userId) {
-    return res.status(409).json({ message: "Missing user id" });
+    return res.status(400).json({ message: "Missing user id" });
   }
   const currUser: CurrentUser = authDetails(req);
   let user: User | null = await prisma.user.findFirst({
     where: { id: Number(req.query.userId) },
   });
   if (!user) {
-    return res.status(409).json({ message: "user doesn't exist" });
+    return res.status(404).json({ message: "user doesn't exist" });
   }
   prisma.user
     .update({
@@ -108,16 +108,16 @@ const followUser = async (req: Request, res: Response) => {
 
 const removeFollower = async (req: Request, res: Response) => {
   if (!req.query.userId) {
-    return res.status(409).json({ message: "Missing user id" });
+    return res.status(400).json({ message: "Missing user id" });
   }
   if (!req.query.unfollow) {
-    return res.status(409).json({ message: "req not specified!" });
+    return res.status(400).json({ message: "req not specified!" });
   }
   let user: User | null = await prisma.user.findFirst({
     where: { id: Number(req.query.userId) },
   });
   if (!user) {
-    return res.status(409).json({ message: "user doesn't exist" });
+    return res.status(404).json({ message: "user doesn't exist" });
   }
   const currUser: CurrentUser = authDetails(req);
   let unfollow: boolean = Boolean(req.query.unfollow);
@@ -179,7 +179,7 @@ const getUser = async (req: Request, res: Response) => {
     return res.status(200).json({ users: users });
   }
   if (!req.query.userId && !req.query.search) {
-    return res.status(409).json({ message: "missing search key" });
+    return res.status(400).json({ message: "missing search key" });
   }
   if (req.query.userId) {
     let user: any = await prisma.user.findFirst({
