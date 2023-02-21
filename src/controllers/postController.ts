@@ -3,7 +3,7 @@ import e, { NextFunction, Request, Response } from "express";
 import prisma from "../../prismaClient";
 import { Post, Comment, Room } from "@prisma/client";
 import requestValidator from "../Helpers/validator";
-import { CurrentUser, commentBody, updatePostBody } from "../../TypeDef";
+import { CurrentUser, commentBody, errorResponse, updatePostBody } from "../../TypeDef";
 const createPost = (req: Request, res: Response, next: NextFunction) => {
   const body: any = req.query;
   const currUser: CurrentUser = authDetails(req);
@@ -242,9 +242,60 @@ const unlikePost = async (req: Request, res: Response) => {
       },
     })
     .then( (updatedPost : Post)=>{return res.status(200).json({post : updatedPost})})
-    .catch( (err : Error)=>{return res.status(500).json({message : err.message})});
+    .catch( (err : Error)=>{return errorResponse(res, err)});
 };
 
+const likeComment = async(req : Request, res : Response)=>{
+  const currUser : CurrentUser = authDetails(req);
+
+  if(!req.query.commentId){
+    return res.status(400).json({message : "missing comment id!"});
+  }
+  let comment : Comment | null = await prisma.comment.findFirst({where : {id : Number(req.query.commentId)}});
+
+  if(!comment){
+    return res.status(404).json({message : "comment doesn't exist!"});
+  }
+
+  prisma.comment.update({
+    where : {id  : Number(req.query.commentId)},
+    data : {
+      likedBy : {
+        connect : [{id : currUser.id}]
+      }
+    }
+  }).then(
+    (updatedComment : Comment)=>{return res.status(200).json({comment : updatedComment})}
+  ).catch((err : Error)=>{
+    return errorResponse(res, err);
+  })
+}
+
+const unlikeComment = async(req : Request, res : Response)=>{
+  const currUser : CurrentUser = authDetails(req);
+
+  if(!req.query.commentId){
+    return res.status(400).json({message : "missing comment id!"});
+  }
+  let comment : Comment | null = await prisma.comment.findFirst({where : {id : Number(req.query.commentId)}});
+
+  if(!comment){
+    return res.status(404).json({message : "comment doesn't exist!"});
+  }
+
+  prisma.comment.update({
+    where : {id  : Number(req.query.commentId)},
+    data : {
+      likedBy : {
+        disconnect : [{id : currUser.id}]
+      }
+    }
+  }).then(
+    (updatedComment : Comment)=>{return res.status(200).json({comment : updatedComment})}
+  ).catch((err : Error)=>{
+    return errorResponse(res, err);
+  })
+}
 export {
   createPost,
   getPosts,
@@ -253,5 +304,7 @@ export {
   addComment,
   deleteComment,
   likePost,
-  unlikePost
+  unlikePost,
+  likeComment,
+  unlikeComment
 };

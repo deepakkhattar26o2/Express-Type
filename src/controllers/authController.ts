@@ -5,7 +5,7 @@ import emailQueue from "../Helpers/emailQueue";
 const bcr = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const randomString = require("randomstring");
-import { signupRequest, loginRequest, CurrentUser } from "../../TypeDef";
+import { signupRequest, loginRequest, CurrentUser, errorResponse } from "../../TypeDef";
 
 const confirmEmail = (req: Request, res: Response) => {
   if (!req.body.email) {
@@ -116,7 +116,7 @@ const loginRequestHandler = async (req: Request, res: Response) => {
 
   bcr.compare(password, alreadyExists.password, (err: Error, same: boolean) => {
     if (err) {
-      return res.status(500).json({ message: err.message });
+      return errorResponse(res, err);
     }
     if (!same) {
       return res.status(400).json({ message: "Password doesn't match!" });

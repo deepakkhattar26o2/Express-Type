@@ -3,7 +3,7 @@ import { authDetails } from "./authController";
 import { NextFunction, Request, Response } from "express";
 import { Message } from "@prisma/client";
 import { io } from "../../server";
-import { CurrentUser } from "../../TypeDef";
+import { CurrentUser, errorResponse } from "../../TypeDef";
 const getMessages = async (req: Request, res: Response) => {
   const currUser: CurrentUser = authDetails(req);
   if (!req.query.roomId && !req.query.userId) {
@@ -76,7 +76,7 @@ const sendMessage = (req: Request, res: Response, next: NextFunction) => {
       }
     })
     .catch((err: Error) => {
-      return res.status(500).json({ message: err.message });
+      return errorResponse(res, err);
     });
 };
 
@@ -99,7 +99,7 @@ const deleteMessage = async (req: Request, res: Response) => {
         .json({ resp: doc, message: "message deleted successfully" });
     })
     .catch((err: Error) => {
-      return res.status(500).json({ message: err.message });
+      return errorResponse(res, err);
     });
 };
 

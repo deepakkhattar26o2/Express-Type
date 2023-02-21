@@ -2,7 +2,7 @@ import { Post, User } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import prisma from "../../prismaClient";
 import { authDetails } from "./authController";
-import { CurrentUser } from "../../TypeDef";
+import { CurrentUser, errorResponse } from "../../TypeDef";
 
 const bcr = require("bcrypt");
 
@@ -14,7 +14,7 @@ const updatePassword = (req: Request, res: Response) => {
   const User: CurrentUser = authDetails(req);
   bcr.hash(body.password, 10, (err: Error, hash: string) => {
     if (err) {
-      return res.status(500).json({ message: err.message });
+      return errorResponse(res, err);
     }
     prisma.user
       .update({
@@ -68,7 +68,7 @@ const updateProfile = async (
       }
     })
     .catch((err: Error) => {
-      return res.status(500).json({ message: err.message });
+      return errorResponse(res, err);
     });
 };
 
@@ -102,7 +102,7 @@ const followUser = async (req: Request, res: Response) => {
       return res.status(200).json({ user: updatedUser });
     })
     .catch((err: Error) => {
-      return res.status(500).json({ message: err.message });
+      return errorResponse(res, err);
     });
 };
 
@@ -162,7 +162,7 @@ const getActivities = async (req: Request, res: Response) => {
       return res.status(200).json({ posts: posts });
     })
     .catch((err: Error) => {
-      return res.status(500).json({ message: err.message });
+      return errorResponse(res, err);
     });
 };
 

@@ -4,7 +4,7 @@ import prisma from "../../prismaClient";
 import { authDetails } from "./authController";
 import requestValidator from "../Helpers/validator";
 import { io } from "../../server";
-import { CurrentUser, createRoomBody } from "../../TypeDef";
+import { CurrentUser, createRoomBody, errorResponse } from "../../TypeDef";
 
 const getRooms = async (req: Request, res: Response) => {
   var rooms: Room[] = [];
@@ -133,7 +133,7 @@ const createRoom = async (req: Request, res: Response, next: NextFunction) => {
       next();
     })
     .catch((err: Error) => {
-      return res.status(500).json({ message: err.message });
+      return errorResponse(res, err);
     });
 };
 const joinRoom = async (req: Request, res: Response) => {
@@ -192,7 +192,7 @@ const joinRoom = async (req: Request, res: Response) => {
       return res.status(200).json({ room: room });
     })
     .catch((err: Error) => {
-      return res.status(500).json({ message: err.message });
+      return errorResponse(res, err);
     });
 };
 const leaveRoom = async (req: Request, res: Response) => {
@@ -227,7 +227,7 @@ const leaveRoom = async (req: Request, res: Response) => {
       return res.status(200).json({ room: room, user: currUser });
     })
     .catch((err: Error) => {
-      return res.status(500).json({ message: err.message });
+      return errorResponse(res, err);
     });
 };
 const removeMember = async (req: Request, res: Response) => {
@@ -258,7 +258,7 @@ const removeMember = async (req: Request, res: Response) => {
       return res.status(200).json({ updatedRoom: updatedRoom });
     })
     .catch((err: Error) => {
-      return res.status(500).json({ message: err.message });
+      return errorResponse(res, err);
     });
 };
 

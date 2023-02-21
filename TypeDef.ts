@@ -1,3 +1,4 @@
+import { Response } from "express";
 type signupRequest = {
   email: string;
   password: string;
@@ -35,9 +36,22 @@ type updatePostBody = {
 };
 
 type createRoomBody = {
-    roomName?: string;
-    description?: string;
-    topics?: string;
-  }
+  roomName?: string;
+  description?: string;
+  topics?: string;
+};
 
-export { signupRequest, loginRequest, CurrentUser, commentBody, updatePostBody, createRoomBody };
+
+const errorResponse = (res : Response, err : Error) =>{
+  return res.status(500).json({message : err.message});
+}
+
+export {
+  signupRequest,
+  loginRequest,
+  CurrentUser,
+  commentBody,
+  updatePostBody,
+  createRoomBody,
+  errorResponse
+};
